@@ -38,7 +38,10 @@ def preprocess(filename=get_default_data_path()) -> ProcessedData:
     assert df["label"].unique().size == len(TARGET_LABELS)
 
     df["content"] = (
-        df["content"].map(remove_punctuation).map(lambda s: s.lower().split())
+        df["content"]
+        .map(remove_punctuation)
+        .map(lambda s: s.lower().split())
+        .map(lambda words: tuple(filter(lambda w: w not in STOPWORDS, words)))
     )
 
     feature_labels: tuple[str, ...] = tuple(
@@ -80,6 +83,6 @@ TARGET_LABELS: tuple[str, ...] = (
     "Natural Place",
 )
 
-nltk.download("stopwords")
+nltk.download("stopwords", os.path.abspath(".venv/lib/nltk_data"))
 
 STOPWORDS = set(nltk.corpus.stopwords.words("english"))
