@@ -3,7 +3,6 @@
 # 3. Make sure there is no missing data or empty strings (or nan)
 # 4. Get all unique words
 # 5. Transform content into the frequency of each word
-# TODO: Remove stopwords
 # 6. Data would be Dict[int, Dict[str, int]]
 # 7. Transform data to be np.array[int] (len=categories) and np.array[int, int]
 #    (len=[categories, words])
@@ -13,6 +12,8 @@ import os
 import string
 from collections import Counter
 
+import nltk
+import nltk.corpus
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -78,3 +79,7 @@ TARGET_LABELS: tuple[str, ...] = (
     "Building",
     "Natural Place",
 )
+
+nltk.download("stopwords")
+
+STOPWORDS = set(nltk.corpus.stopwords.words("english"))
