@@ -1,8 +1,10 @@
+from interactive_naive_bayes.naive_bayes.classifier import train
 from interactive_naive_bayes.naive_bayes.preprocessing import preprocess
 
 
 def main():
-    preprocess()
+    processed = preprocess()
+    train(targets=processed.targets, features=processed.features)
 
 
 if __name__ == "__main__":

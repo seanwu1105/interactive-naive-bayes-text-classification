@@ -1,30 +1,21 @@
-# 1. Read file
-# 2. Use columns: category, content
-# 3. Make sure there is no missing data or empty strings (or nan)
-# 4. Get all unique words
-# 5. Transform content into the frequency of each word
-# 6. Data would be Dict[int, Dict[str, int]]
-# 7. Transform data to be np.array[int] (len=categories) and np.array[int, int]
-#    (len=[categories, words])
 import dataclasses
 import itertools
 import os
 import string
-from collections import Counter
 
 import nltk
 import nltk.corpus
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from interactive_naive_bayes.naive_bayes.classifier import Category, WordCount
+from interactive_naive_bayes.naive_bayes.classifier import Category, HasWord
 
 
 @dataclasses.dataclass
 class ProcessedData:
     targets: npt.NDArray[Category]
     target_labels: tuple[str, ...]
-    features: npt.NDArray[WordCount]
+    features: npt.NDArray[HasWord]
     feature_labels: tuple[str, ...]
 
 
@@ -50,13 +41,13 @@ def preprocess(filename=get_default_data_path()) -> ProcessedData:
 
     feature_indices = {label: i for i, label in enumerate(feature_labels)}
 
-    counters: list[dict[str, int]] = df["content"].map(Counter).to_list()
+    sets: list[set[str]] = df["content"].map(set).to_list()
 
-    features = np.zeros((len(df), len(feature_labels)), dtype=WordCount)
+    features = np.zeros((len(df), len(feature_labels)), dtype=HasWord)
 
-    for i, counter in enumerate(counters):
-        for word, count in counter.items():
-            features[i, feature_indices[word]] = count
+    for i, words in enumerate(sets):
+        for word in words:
+            features[i, feature_indices[word]] = 1
 
     return ProcessedData(
         targets=df["label"].to_numpy(dtype=np.uint),

@@ -11,12 +11,12 @@ class Model:
 
 
 Category = np.ushort
-WordCount = np.uint
+HasWord = np.ushort
 
 
-def train(target: npt.NDArray[Category], features: npt.NDArray[WordCount]) -> Model:
-    pass
+def train(targets: npt.NDArray[Category], features: npt.NDArray[HasWord]) -> Model:
+    print(targets)
 
 
-def predict(feature: npt.NDArray[WordCount], model: Model) -> Category:
+def predict(feature: npt.NDArray[HasWord], model: Model) -> Category:
     pass
