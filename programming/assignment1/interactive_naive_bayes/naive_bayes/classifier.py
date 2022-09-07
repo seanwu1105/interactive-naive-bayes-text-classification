@@ -24,6 +24,7 @@ def get_prior(targets: npt.NDArray[Category]) -> dict[Category, float]:
     return dict(zip(unique, counts / len(targets)))
 
 
+# TODO: Maybe use numba to speed up this function
 def get_likelihood(
     targets: npt.NDArray[Category], samples: npt.NDArray[HasWord]
 ) -> Likelihood:
@@ -42,5 +43,19 @@ def get_likelihood(
     return likelihood
 
 
-def predict(feature: npt.NDArray[HasWord], model: Model) -> Category:
-    pass
+def predict(sample: npt.NDArray[HasWord], model: Model) -> Category:
+    max_posterior = 0.0
+    predicted_category = None
+    for category, prior in model.prior.items():
+        posterior = prior * np.prod(
+            tuple(
+                model.likelihood[category][feature][value]
+                for feature, value in enumerate(sample)
+            )
+        )
+        if posterior > max_posterior:
+            max_posterior = float(posterior)
+            predicted_category = category
+
+    assert predicted_category is not None
+    return predicted_category

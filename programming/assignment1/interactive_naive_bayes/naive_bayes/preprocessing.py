@@ -17,6 +17,7 @@ class ProcessedData:
     target_labels: tuple[str, ...]
     samples: npt.NDArray[HasWord]
     feature_labels: tuple[str, ...]
+    label_indices: dict[str, int]
 
 
 def get_default_data_path():
@@ -39,7 +40,7 @@ def preprocess(filename=get_default_data_path()) -> ProcessedData:
         set(itertools.chain.from_iterable(df["content"].values))
     )
 
-    feature_indices = {label: i for i, label in enumerate(feature_labels)}
+    label_indices = {label: i for i, label in enumerate(feature_labels)}
 
     sets: list[set[str]] = df["content"].map(set).to_list()
 
@@ -47,14 +48,25 @@ def preprocess(filename=get_default_data_path()) -> ProcessedData:
 
     for i, words in enumerate(sets):
         for word in words:
-            samples[i, feature_indices[word]] = 1
+            samples[i, label_indices[word]] = 1
 
     return ProcessedData(
         targets=df["label"].to_numpy(dtype=np.uint),
         target_labels=TARGET_LABELS,
         samples=samples,
         feature_labels=feature_labels,
+        label_indices=label_indices,
     )
+
+
+def to_sample(text: str, label_indices: dict[str, int]) -> npt.NDArray[HasWord]:
+    words = remove_punctuation(text).lower().split()
+    filtered: tuple[str, ...] = tuple(filter(lambda w: w not in STOPWORDS, words))
+    sample = np.zeros(len(label_indices), dtype=HasWord)
+    for word in filtered:
+        if word in label_indices:
+            sample[label_indices[word]] = 1
+    return sample
 
 
 def remove_punctuation(text: str) -> str:
