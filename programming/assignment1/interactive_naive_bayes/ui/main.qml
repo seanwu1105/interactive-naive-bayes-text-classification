@@ -3,8 +3,13 @@ import QtQuick.Controls
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtCharts
+import InteractiveNaiveBayes.Ui
 
 ApplicationWindow {
+    Bridge {
+        id: bridge
+    }
+
     visible: true
     width: 640
     height: 480
@@ -33,7 +38,8 @@ ApplicationWindow {
             Layout.margins: 8
 
             Text {
-                text: "Model Accuracy: 75%"
+                // text: "Model Accuracy: 75%"
+                text: bridge.myText
             }
 
             ChartView {
@@ -52,6 +58,9 @@ ApplicationWindow {
         Button {
             Layout.fillWidth: true
             text: "Predict"
+            onClicked: {
+                bridge.setMyText("Hello New World!")
+            }
         }
 
         Text {
