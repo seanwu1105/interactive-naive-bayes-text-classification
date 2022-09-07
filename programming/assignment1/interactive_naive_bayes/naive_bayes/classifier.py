@@ -28,13 +28,14 @@ def get_likelihood(
     targets: npt.NDArray[Category], samples: npt.NDArray[HasWord]
 ) -> Likelihood:
     categories = np.unique(targets)
+    smoothing_values = np.array([0, 1])
 
     likelihood: Likelihood = {}
     for category in categories:
         likelihood[category] = {}
-        indices = np.nonzero(targets == category)
+        (indices,) = np.nonzero(targets == category)
         for feature in range(samples.shape[1]):
-            values = samples[indices, feature]
+            values = np.append(samples[indices, feature], smoothing_values)
             unique, counts = np.unique(values, return_counts=True)
             likelihood[category][feature] = dict(zip(unique, counts / len(values)))
 
