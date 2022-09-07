@@ -4,8 +4,9 @@ See [instruction](instructions.pdf) for details.
 
 ## TODO:
 
-- [ ] Build NBC
+- [x] Build NBC
 - [ ] Build UI
+  - [ ] Remove generated files (rc)
 - [ ] Setup git hooks
 - [ ] Setup CI
 - [ ] Setup tests
