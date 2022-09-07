@@ -15,7 +15,7 @@ from interactive_naive_bayes.naive_bayes.classifier import Category, HasWord
 class ProcessedData:
     targets: npt.NDArray[Category]
     target_labels: tuple[str, ...]
-    features: npt.NDArray[HasWord]
+    samples: npt.NDArray[HasWord]
     feature_labels: tuple[str, ...]
 
 
@@ -43,16 +43,16 @@ def preprocess(filename=get_default_data_path()) -> ProcessedData:
 
     sets: list[set[str]] = df["content"].map(set).to_list()
 
-    features = np.zeros((len(df), len(feature_labels)), dtype=HasWord)
+    samples = np.zeros((len(df), len(feature_labels)), dtype=HasWord)
 
     for i, words in enumerate(sets):
         for word in words:
-            features[i, feature_indices[word]] = 1
+            samples[i, feature_indices[word]] = 1
 
     return ProcessedData(
         targets=df["label"].to_numpy(dtype=np.uint),
         target_labels=TARGET_LABELS,
-        features=features,
+        samples=samples,
         feature_labels=feature_labels,
     )
 
