@@ -51,7 +51,7 @@ interaction scenario. For example,
 
 Indeed, these guidelines are more important for the AI systems as they could be
 more blurred to the users about the capability of the AI. However, they are also
-an important rule when we design a traditional computer program. Giving the user
+important rules when we design a traditional computer program. Giving the user
 a clear and complete picture of features with solid scope and limitations is a
 good practice to make the user feels the product is under control and
 predictable. Just like the AI systems, rule-based computer applications will
