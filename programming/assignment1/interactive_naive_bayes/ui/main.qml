@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls
 import QtQuick.Layouts
 import QtCharts
 
@@ -13,27 +14,23 @@ ApplicationWindow {
         anchors.fill: parent
         columns: 2
 
-        // TODO: Buggy
-        Flickable {
+        ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.preferredWidth: parent.width / 3
-            contentHeight: textArea.implicitHeight
-
-            TextArea {
-                id: textArea
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                placeholderText: "Enter text to classify"
-                wrapMode: TextEdit.Wrap
+            background: Rectangle {
+                color: "ghostwhite"
             }
 
-            ScrollBar.vertical: ScrollBar {}
+            TextArea {
+                placeholderText: "Text Document"
+            }
         }
-
+        
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.margins: 8
 
             Text {
                 text: "Model Accuracy: 75%"
