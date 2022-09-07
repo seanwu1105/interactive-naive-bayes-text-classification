@@ -1,4 +1,5 @@
 import dataclasses
+import multiprocessing
 
 import numpy as np
 import numpy.typing as npt
@@ -24,23 +25,36 @@ def get_prior(targets: npt.NDArray[Category]) -> dict[Category, float]:
     return dict(zip(unique, counts / len(targets)))
 
 
-# TODO: Maybe use numba to speed up this function
 def get_likelihood(
     targets: npt.NDArray[Category], samples: npt.NDArray[HasWord]
 ) -> Likelihood:
     categories = np.unique(targets)
-    smoothing_values = np.array([0, 1])
+
+    category_likelihoods = []
+    with multiprocessing.Pool() as pool:
+        category_likelihoods = pool.map(
+            get_category_likelihood,
+            (samples[np.nonzero(targets == category)[0]] for category in categories),
+        )
 
     likelihood: Likelihood = {}
-    for category in categories:
-        likelihood[category] = {}
-        (indices,) = np.nonzero(targets == category)
-        for feature in range(samples.shape[1]):
-            values = np.append(samples[indices, feature], smoothing_values)
-            unique, counts = np.unique(values, return_counts=True)
-            likelihood[category][feature] = dict(zip(unique, counts / len(values)))
+    for idx, category in enumerate(categories):
+        likelihood[category] = category_likelihoods[idx]
 
     return likelihood
+
+
+def get_category_likelihood(samples: npt.NDArray[HasWord]):
+    smoothing_values = np.array([0, 1])
+
+    ret = {}
+
+    for feature in range(samples.shape[1]):
+        values = np.append(samples[:, feature], smoothing_values)
+        unique, counts = np.unique(values, return_counts=True)
+        ret[feature] = dict(zip(unique, counts / len(values)))
+
+    return ret
 
 
 def predict(sample: npt.NDArray[HasWord], model: Model) -> Category:
