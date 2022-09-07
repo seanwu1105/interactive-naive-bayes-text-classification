@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication
 
 from interactive_naive_bayes.ui import rc_resources
 
+# WORKAROUND: https://github.com/microsoft/pylance-release/issues/3181
 rc_resources  # pylint: disable=pointless-statement
 
 
