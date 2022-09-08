@@ -28,6 +28,7 @@ ApplicationWindow {
             }
 
             TextArea {
+                id: textArea
                 placeholderText: "Text Document"
             }
         }
@@ -38,8 +39,7 @@ ApplicationWindow {
             Layout.margins: 8
 
             Text {
-                // text: "Model Accuracy: 75%"
-                text: bridge.myText
+                text: "Model Accuracy: 75%"
             }
 
             ChartView {
@@ -59,13 +59,14 @@ ApplicationWindow {
             Layout.fillWidth: true
             text: "Predict"
             onClicked: {
-                bridge.setMyText("Hello New World!")
+                bridge.predict(textArea.text)
             }
         }
 
         Text {
             Layout.fillWidth: true
-            text: "Prediction Result: Person (81%)"
+            // text: "Prediction Result: Person (81%)"
+            text: bridge.predictionResult
         }
     }
 }

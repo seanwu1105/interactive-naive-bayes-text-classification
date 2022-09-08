@@ -31,6 +31,7 @@ def get_likelihood(
     categories = np.unique(targets)
 
     category_likelihoods = []
+    # TODO: Use ProcessPoolExecutor
     with multiprocessing.Pool() as pool:
         category_likelihoods = pool.map(
             get_category_likelihood,
