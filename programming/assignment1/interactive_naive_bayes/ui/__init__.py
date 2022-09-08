@@ -1,6 +1,6 @@
 # pylint: disable=invalid-name
 import threading
-from typing import Any, Callable, TypedDict
+from typing import TypedDict
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 from PySide6.QtQml import QmlElement
@@ -30,7 +30,7 @@ class Bridge(QObject):
         self.processed: ProcessedData | None = None
         self.model: Model | None = None
         self._state: State = {
-            "loadingLabel": "",
+            "loadingLabel": "Initializing",
             "predictionResult": "",
         }
         threading.Thread(target=self.train).start()
@@ -53,12 +53,11 @@ class Bridge(QObject):
             ]
             self.set_state({**self._state, "predictionResult": result})
 
-        if self.model is None:
-            return threading.Thread(target=lambda: self.train(_predict)).start()
+        assert self.model is not None
 
         return _predict(self.model)
 
-    def train(self, callback: None | Callable[[Model], Any] = None):
+    def train(self):
         if self.processed is None:
             self.set_state({**self._state, "loadingLabel": "Preprocessing"})
             self.processed = preprocess()
@@ -66,6 +65,3 @@ class Bridge(QObject):
         self.set_state({**self._state, "loadingLabel": "Training"})
         self.model = train(self.processed.targets, self.processed.samples)
         self.set_state({**self._state, "loadingLabel": ""})
-
-        if callback is not None:
-            callback(self.model)
