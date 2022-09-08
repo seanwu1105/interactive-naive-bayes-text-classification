@@ -33,7 +33,7 @@ class Bridge(QObject):
             "loadingLabel": "",
             "predictionResult": "",
         }
-        self.train()
+        threading.Thread(target=self.train).start()
 
     @Property("QVariantMap", notify=stateChanged)
     def state(self):
@@ -54,21 +54,18 @@ class Bridge(QObject):
             self.set_state({**self._state, "predictionResult": result})
 
         if self.model is None:
-            return self.train(_predict)
+            return threading.Thread(target=lambda: self.train(_predict)).start()
 
         return _predict(self.model)
 
     def train(self, callback: None | Callable[[Model], Any] = None):
-        def _train():
-            if self.processed is None:
-                self.set_state({**self._state, "loadingLabel": "Preprocessing"})
-                self.processed = preprocess()
+        if self.processed is None:
+            self.set_state({**self._state, "loadingLabel": "Preprocessing"})
+            self.processed = preprocess()
 
-            self.set_state({**self._state, "loadingLabel": "Training"})
-            self.model = train(self.processed.targets, self.processed.samples)
-            self.set_state({**self._state, "loadingLabel": ""})
+        self.set_state({**self._state, "loadingLabel": "Training"})
+        self.model = train(self.processed.targets, self.processed.samples)
+        self.set_state({**self._state, "loadingLabel": ""})
 
-            if callback is not None:
-                callback(self.model)
-
-        threading.Thread(target=_train).start()
+        if callback is not None:
+            callback(self.model)
