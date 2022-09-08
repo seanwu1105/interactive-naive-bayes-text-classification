@@ -11,7 +11,7 @@ ApplicationWindow {
     }
 
     visible: true
-    width: 640
+    width: 1080
     height: 480
     title: "Interactive Naive Bayes Text Classifier"
 
@@ -22,7 +22,7 @@ ApplicationWindow {
         ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.preferredWidth: parent.width / 3
+            Layout.preferredWidth: parent.width / 2
             background: Rectangle {
                 color: "ghostwhite"
             }
@@ -34,8 +34,6 @@ ApplicationWindow {
         }
         
         ColumnLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
             Layout.margins: 8
 
             Text {
@@ -58,15 +56,29 @@ ApplicationWindow {
         Button {
             Layout.fillWidth: true
             text: "Predict"
+            enabled: bridge.state.loadingLabel.length === 0
             onClicked: {
                 bridge.predict(textArea.text)
             }
         }
 
-        Text {
-            Layout.fillWidth: true
-            // text: "Prediction Result: Person (81%)"
-            text: bridge.predictionResult
+        RowLayout {
+            Layout.preferredWidth: parent.width / 2
+
+            Text {
+                Layout.fillWidth: true
+                text: (bridge.state.loadingLabel.length > 0
+                       ? bridge.state.loadingLabel
+                       : bridge.state.predictionResult.length > 0
+                       ? `Prediction Result: ${bridge.state.predictionResult} (??%)`
+                       : "")
+            }
+
+            BusyIndicator {
+                Layout.preferredHeight: 40 // Same as button height
+                visible: bridge.state.loadingLabel.length > 0
+                running: true
+            }
         }
     }
 }
