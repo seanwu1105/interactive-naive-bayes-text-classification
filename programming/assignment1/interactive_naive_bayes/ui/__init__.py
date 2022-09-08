@@ -33,6 +33,7 @@ class Bridge(QObject):
             "loadingLabel": "",
             "predictionResult": "",
         }
+        self.train()
 
     @Property("QVariantMap", notify=stateChanged)
     def state(self):
@@ -57,7 +58,7 @@ class Bridge(QObject):
 
         return _predict(self.model)
 
-    def train(self, cb: Callable[[Model], Any]):
+    def train(self, callback: None | Callable[[Model], Any] = None):
         def _train():
             if self.processed is None:
                 self.set_state({**self._state, "loadingLabel": "Preprocessing"})
@@ -67,6 +68,7 @@ class Bridge(QObject):
             self.model = train(self.processed.targets, self.processed.samples)
             self.set_state({**self._state, "loadingLabel": ""})
 
-            cb(self.model)
+            if callback is not None:
+                callback(self.model)
 
         threading.Thread(target=_train).start()
