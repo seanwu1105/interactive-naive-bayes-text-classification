@@ -1,25 +1,24 @@
+import collections
 import dataclasses
 import functools
-import itertools
 import os
 import string
 
-import nltk
 import nltk.corpus
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from interactive_naive_bayes.naive_bayes.classifier import Category, HasWord
+from interactive_naive_bayes.naive_bayes.classifier import Category, Count
 
 
 @dataclasses.dataclass
 class ProcessedData:
-    targets: npt.NDArray[Category]
-    target_labels: tuple[str, ...]
-    samples: npt.NDArray[HasWord]
-    feature_labels: tuple[str, ...]
-    label_indices: dict[str, int]
+    categories: npt.NDArray[Category]
+    category_labels: tuple[str, ...]
+    documents: npt.NDArray[Count]
+    vocabulary: tuple[str, ...]
+    vocabulary_indices: dict[str, int]
 
 
 def get_default_data_path():
@@ -35,40 +34,32 @@ def preprocess(filename=get_default_data_path()) -> ProcessedData:
         df["content"]
         .map(remove_punctuation)
         .map(lambda s: s.lower().split())
-        .map(lambda words: tuple(filter(lambda w: w not in get_stopwords(), words)))
+        .map(
+            lambda words: collections.Counter(
+                filter(lambda w: w not in get_stopwords(), words)
+            )
+        )
     )
 
-    feature_labels: tuple[str, ...] = tuple(
-        set(itertools.chain.from_iterable(df["content"].values))
+    vocabulary: tuple[str, ...] = tuple(
+        set(key for counters in df["content"].values for key in counters.keys())
     )
 
-    label_indices = {label: i for i, label in enumerate(feature_labels)}
+    vocabulary_indices = {word: i for i, word in enumerate(vocabulary)}
 
-    sets: list[set[str]] = df["content"].map(set).to_list()
+    documents = np.zeros((len(df), len(vocabulary)), dtype=Count)
 
-    samples = np.zeros((len(df), len(feature_labels)), dtype=HasWord)
-
-    for i, words in enumerate(sets):
-        for word in words:
-            samples[i, label_indices[word]] = 1
+    for i, counter in enumerate(df["content"].values):
+        for word, count in counter.items():
+            documents[i, vocabulary_indices[word]] = count
 
     return ProcessedData(
-        targets=df["label"].to_numpy(dtype=np.uint),
-        target_labels=TARGET_LABELS,
-        samples=samples,
-        feature_labels=feature_labels,
-        label_indices=label_indices,
+        categories=df["label"].to_numpy(dtype=Category),
+        category_labels=TARGET_LABELS,
+        documents=documents,
+        vocabulary=vocabulary,
+        vocabulary_indices=vocabulary_indices,
     )
-
-
-def to_sample(text: str, label_indices: dict[str, int]) -> npt.NDArray[HasWord]:
-    words = remove_punctuation(text).lower().split()
-    filtered: tuple[str, ...] = tuple(filter(lambda w: w not in get_stopwords(), words))
-    sample = np.zeros(len(label_indices), dtype=HasWord)
-    for word in filtered:
-        if word in label_indices:
-            sample[label_indices[word]] = 1
-    return sample
 
 
 def remove_punctuation(text: str) -> str:
