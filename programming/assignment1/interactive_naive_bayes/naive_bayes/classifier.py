@@ -3,7 +3,7 @@ import dataclasses
 import numpy as np
 import numpy.typing as npt
 
-Category = np.uint
+Category = np.int_
 Count = np.uint
 
 
@@ -17,17 +17,17 @@ class Model:
 
 def train(categories: npt.NDArray[Category], documents: npt.NDArray[Count]) -> Model:
     assert len(categories) == len(documents)
-    return Model(get_prior(categories), get_likelihood(categories, documents))
+    return Model(_get_prior(categories), _get_likelihood(categories, documents))
 
 
-def get_prior(categories: npt.NDArray[Category]) -> npt.NDArray[np.floating]:
+def _get_prior(categories: npt.NDArray[Category]) -> npt.NDArray[np.floating]:
     unique, counts = np.unique(categories, return_counts=True)
     prior = np.zeros(len(unique))
     prior[unique] = counts / len(categories)
     return prior
 
 
-def get_likelihood(
+def _get_likelihood(
     categories: npt.NDArray[Category], documents: npt.NDArray[Count]
 ) -> npt.NDArray[np.floating]:
     assert len(categories) == len(documents)
@@ -46,4 +46,12 @@ def get_likelihood(
 
 
 def predict(document: npt.NDArray[Count], model: Model) -> Category:
-    pass
+    posteriors = np.fromiter(
+        (
+            prior * np.prod(model.likelihood[category] ** document)
+            for category, prior in enumerate(model.prior)
+        ),
+        dtype=np.float64,
+    )
+
+    return np.argmax(posteriors)

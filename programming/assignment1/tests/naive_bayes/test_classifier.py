@@ -1,6 +1,6 @@
 import numpy as np
 
-from interactive_naive_bayes.naive_bayes.classifier import train
+from interactive_naive_bayes.naive_bayes.classifier import Model, predict, train
 
 
 def test_train():
@@ -31,3 +31,13 @@ def test_train():
         model.likelihood,
         np.array([[0.375, 0.25, 0.375], [0.4, 0.4, 0.2], [0.32, 0.32, 0.36]]),
     )
+
+
+def test_predict():
+    document = np.array([0, 1, 2])
+    model = Model(
+        prior=np.array([0.6, 0.4]),
+        likelihood=np.array([[0.5, 0.25, 0.25], [0.25, 0.5, 0.25]]),
+    )
+
+    assert predict(document, model) == 1
