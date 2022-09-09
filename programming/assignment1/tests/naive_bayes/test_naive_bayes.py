@@ -1,5 +1,6 @@
 from interactive_naive_bayes.naive_bayes.classifier import train
 from interactive_naive_bayes.naive_bayes.preprocessing import preprocess
+from interactive_naive_bayes.naive_bayes.validation import validate
 
 
 def test_nbc():
