@@ -1,5 +1,6 @@
 import dataclasses
 
+import numba
 import numpy as np
 import numpy.typing as npt
 import scipy.special
@@ -49,26 +50,22 @@ def _get_likelihood(
 # Use log-sum-exp trick to avoid underflow. See:
 # https://stats.stackexchange.com/questions/105602/example-of-how-the-log-sum-exp-trick-works-in-naive-bayes/253319#253319
 def predict(document: npt.NDArray[Count], model: Model) -> tuple[Category, float]:
-    log_normalizer = _get_log_normalizer(document, model)
-    probabilities = []
-    for category, prior in enumerate(model.prior):
-        log_posterior = np.log(prior) + np.sum(
-            np.log(model.likelihood[category]) * document
-        )
-
-        log_probability = log_posterior - log_normalizer
-        probabilities.append(np.exp(log_probability))
+    log_posteriors = _get_log_posteriors(document, model.prior, model.likelihood)
+    log_normalizer = scipy.special.logsumexp(log_posteriors)
+    probabilities = tuple(
+        np.exp(log_posterior - log_normalizer) for log_posterior in log_posteriors
+    )
 
     return np.argmax(probabilities), float(max(probabilities))
 
 
-def _get_log_normalizer(document: npt.NDArray[Count], model: Model):
-    return scipy.special.logsumexp(
-        np.fromiter(
-            (
-                np.log(prior) + np.sum(np.log(model.likelihood[category]) * document)
-                for category, prior in enumerate(model.prior)
-            ),
-            dtype=np.float64,
-        )
-    )
+@numba.njit(parallel=True, cache=True, nogil=True, fastmath=True)
+def _get_log_posteriors(
+    document: npt.NDArray[Count],
+    priors: npt.NDArray[np.floating],
+    likelihoods: npt.NDArray[np.floating],
+) -> list[np.floating]:
+    return [
+        np.log(prior) + np.sum(np.log(likelihood) * document)
+        for prior, likelihood in zip(priors, likelihoods)
+    ]
