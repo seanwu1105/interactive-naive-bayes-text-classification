@@ -85,7 +85,7 @@ class Bridge(QObject):
 
         self.set_state({**self._state, "loadingLabel": "Training"})
         self.model, accuracy = validate(
-            10, self.processed.categories, self.processed.documents
+            2, self.processed.categories, self.processed.documents
         )
         self.set_state({**self._state, "accuracy": accuracy, "loadingLabel": ""})
 

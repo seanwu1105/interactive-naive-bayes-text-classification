@@ -54,22 +54,52 @@ ApplicationWindow {
             }
 
             ChartView {
+                id: chartView
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 title: "Word Importance"
                 legend.visible: false
                 antialiasing: true
+                property real maxImportance: app.state.wordImportance.length === 0 ? 1 : Math.max(...app.state.wordImportance.map(i => i.importance))
 
                 BarSeries {
+                    BarSet { values: app.state.wordImportance.map(i => i.importance) }
+
                     axisX: BarCategoryAxis {
                         categories: app.state.wordImportance.map(i => i.word)
                         labelsAngle: 45
                     }
                     axisY: ValueAxis {
-                        max: app.state.wordImportance.length === 0 ? 1 : Math.max(...app.state.wordImportance.map(i => i.importance))
+                        max: chartView.maxImportance
                         min: 0
                     }
-                    BarSet { values: app.state.wordImportance.map(i => i.importance) }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: app.state.wordImportance.length > 0
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: (event) => {
+                        if (event.button !== Qt.RightButton) return
+
+                        const point = chartView.mapToValue(Qt.point(event.x, event.y))
+                        if (point.x < -0.5
+                            || point.x > app.state.wordImportance.length - 0.5
+                            || point.y < 0
+                            || point.y > chartView.maxImportance) return
+                        
+                        contextMenu.popup()
+                    }
+                    onPressed: (event) => {
+                        if (event.button !== Qt.LeftButton) return
+                        console.log(chartView.mapToValue(Qt.point(event.x, event.y)))
+                    }
+
+                    Menu {
+                        id: contextMenu
+                        MenuItem { text: "Add Word" }
+                        MenuItem { text: "Remove Word" }
+                    }
                 }
             }
         }
