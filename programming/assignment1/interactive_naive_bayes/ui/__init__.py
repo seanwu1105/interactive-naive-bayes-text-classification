@@ -48,13 +48,26 @@ class Bridge(QObject):
             "confidence": 0.0,
             "wordImportance": (),
         }
-        threading.Thread(target=self.train).start()
+        threading.Thread(target=self._train).start()
+
+    def _train(self):
+        if self.processed is None:
+            self._set_state({**self._state, "loadingLabel": "Preprocessing"})
+            self.processed = preprocess()
+
+        self._set_state({**self._state, "loadingLabel": "Training"})
+        self.model, accuracy = validate(
+            10,
+            self.processed.categories,
+            self.processed.documents,
+        )
+        self._set_state({**self._state, "accuracy": accuracy, "loadingLabel": ""})
 
     @Property(str, notify=stateChanged)
     def state(self):
         return json.dumps(self._state)
 
-    def set_state(self, state: State):
+    def _set_state(self, state: State):
         self._state = state
         self.stateChanged.emit()
 
@@ -69,7 +82,7 @@ class Bridge(QObject):
         word_importance = get_word_importance(
             document, category, self.model.likelihood, self.processed.vocabulary
         )
-        self.set_state(
+        self._set_state(
             {
                 **self._state,
                 "predictionResult": result,
@@ -78,16 +91,17 @@ class Bridge(QObject):
             }
         )
 
-    def train(self):
-        if self.processed is None:
-            self.set_state({**self._state, "loadingLabel": "Preprocessing"})
-            self.processed = preprocess()
+    @Slot(str)
+    def addWord(self, value):
+        print(value)
 
-        self.set_state({**self._state, "loadingLabel": "Training"})
-        self.model, accuracy = validate(
-            2, self.processed.categories, self.processed.documents
-        )
-        self.set_state({**self._state, "accuracy": accuracy, "loadingLabel": ""})
+    @Slot(str)
+    def removeWord(self, value):
+        print(value)
+
+    @Slot(str, float)
+    def setWordImportance(self, value, importance):
+        print(value, importance)
 
 
 def get_word_importance(

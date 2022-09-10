@@ -61,9 +61,14 @@ ApplicationWindow {
                 legend.visible: false
                 antialiasing: true
                 property real maxImportance: app.state.wordImportance.length === 0 ? 1 : Math.max(...app.state.wordImportance.map(i => i.importance))
+                property var draggedBarIndex: undefined
+                property var rightClickedBarIndex: undefined
 
                 BarSeries {
-                    BarSet { values: app.state.wordImportance.map(i => i.importance) }
+                    BarSet {
+                        id: barSet
+                        values: app.state.wordImportance.map(i => i.importance)
+                    }
 
                     axisX: BarCategoryAxis {
                         categories: app.state.wordImportance.map(i => i.word)
@@ -76,6 +81,7 @@ ApplicationWindow {
                 }
 
                 MouseArea {
+                    id: mouseArea
                     anchors.fill: parent
                     enabled: app.state.wordImportance.length > 0
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -83,22 +89,64 @@ ApplicationWindow {
                         if (event.button !== Qt.RightButton) return
 
                         const point = chartView.mapToValue(Qt.point(event.x, event.y))
-                        if (point.x < -0.5
-                            || point.x > app.state.wordImportance.length - 0.5
-                            || point.y < 0
-                            || point.y > chartView.maxImportance) return
+                        if (!isInChartArea(point)) return
                         
+                        chartView.rightClickedBarIndex = Math.round(point.x)
                         contextMenu.popup()
                     }
                     onPressed: (event) => {
                         if (event.button !== Qt.LeftButton) return
-                        console.log(chartView.mapToValue(Qt.point(event.x, event.y)))
+                        
+                        const point = chartView.mapToValue(Qt.point(event.x, event.y))
+                        if (!isInChartArea(point)) return
+
+                        chartView.draggedBarIndex = Math.round(point.x)
+                    }
+                    onPositionChanged: (event) => {
+                        if (mouseArea.pressedButtons !== Qt.LeftButton) return
+                        if (chartView.draggedBarIndex === undefined) return
+
+                        const point = chartView.mapToValue(Qt.point(event.x, event.y))
+                        if (!isInChartArea(point)) return
+
+                        barSet.replace(chartView.draggedBarIndex, point.y)
+                    }
+                    onReleased: (event) => {
+                        if (event.button !== Qt.LeftButton) return
+                        if (chartView.draggedBarIndex === undefined) return
+
+                        const word = app.state.wordImportance[chartView.draggedBarIndex].word
+
+                        chartView.draggedBarIndex = undefined
+
+                        const point = chartView.mapToValue(Qt.point(event.x, event.y))
+
+                        bridge.setWordImportance(word, barSet.at(chartView.draggedBarIndex))
                     }
 
                     Menu {
                         id: contextMenu
-                        MenuItem { text: "Add Word" }
-                        MenuItem { text: "Remove Word" }
+                        MenuItem {
+                            text: "Add Word"
+                            onClicked: {
+                                const word = app.state.wordImportance[chartView.rightClickedBarIndex].word
+                                bridge.addWord(word)
+                            }
+                        }
+                        MenuItem {
+                            text: "Remove Word"
+                            onClicked: {
+                                const word = app.state.wordImportance[chartView.rightClickedBarIndex].word
+                                bridge.removeWord(word)
+                            }
+                        }
+                    }
+
+                    function isInChartArea(point) {
+                        return point.x >= -0.5
+                            && point.x <= app.state.wordImportance.length - 0.5
+                            && point.y >= 0
+                            && point.y <= chartView.maxImportance
                     }
                 }
             }
