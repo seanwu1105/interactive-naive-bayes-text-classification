@@ -4,6 +4,7 @@ import functools
 import os
 import string
 
+import nltk
 import nltk.corpus
 import numpy as np
 import numpy.typing as npt
@@ -16,27 +17,27 @@ from interactive_naive_bayes.naive_bayes.classifier import Category, Count
 class ProcessedData:
     categories: npt.NDArray[Category]
     category_labels: tuple[str, ...]
-    documents: npt.NDArray[Count]
+    documents: npt.NDArray[Count]  # TODO: Use a sparse matrix
     vocabulary: tuple[str, ...]
     vocabulary_indices: dict[str, int]
 
 
-def get_default_data_path():
+def _get_default_data_path():
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), "dbpedia_8K.csv")
 
 
-def preprocess(filename=get_default_data_path()) -> ProcessedData:
+def preprocess(filename=_get_default_data_path()) -> ProcessedData:
     df = pd.read_csv(filename)
 
-    assert df["label"].unique().size == len(TARGET_LABELS)
+    assert df["label"].unique().size == len(_TARGET_LABELS)
 
     df["content"] = (
         df["content"]
-        .map(remove_punctuation)
+        .map(_remove_punctuation)
         .map(lambda s: s.lower().split())
         .map(
             lambda words: collections.Counter(
-                filter(lambda w: w not in get_stopwords(), words)
+                filter(lambda w: w not in _get_stopwords(), words)
             )
         )
     )
@@ -55,26 +56,35 @@ def preprocess(filename=get_default_data_path()) -> ProcessedData:
 
     return ProcessedData(
         categories=df["label"].to_numpy(dtype=Category),
-        category_labels=TARGET_LABELS,
+        category_labels=_TARGET_LABELS,
         documents=documents,
         vocabulary=vocabulary,
         vocabulary_indices=vocabulary_indices,
     )
 
 
-def remove_punctuation(text: str) -> str:
+def to_document(text: str, vocabulary_indices: dict[str, int]) -> npt.NDArray[Count]:
+    words = _remove_punctuation(text).lower().split()
+    document = np.zeros(len(vocabulary_indices), dtype=Count)
+    for word in words:
+        if word in vocabulary_indices:
+            document[vocabulary_indices[word]] += 1
+    return document
+
+
+def _remove_punctuation(text: str) -> str:
     return "".join(
         map(lambda c: c if c in string.ascii_letters + string.digits else " ", text)
     )
 
 
 @functools.cache
-def get_stopwords():
+def _get_stopwords():
     nltk.download("stopwords", os.path.abspath(".venv/lib/nltk_data"))
     return set(nltk.corpus.stopwords.words("english"))
 
 
-TARGET_LABELS: tuple[str, ...] = (
+_TARGET_LABELS: tuple[str, ...] = (
     "Company",
     "Education Institution",
     "Artist",

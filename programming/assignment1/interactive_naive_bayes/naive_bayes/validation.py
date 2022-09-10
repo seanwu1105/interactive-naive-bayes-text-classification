@@ -39,7 +39,7 @@ def validate(
 
     best_accuracy = max(accuracies.keys())
 
-    return accuracies[best_accuracy]
+    return accuracies[best_accuracy], best_accuracy
 
 
 def _test(
@@ -47,7 +47,8 @@ def _test(
 ) -> float:
     correct = 0
     for category, document in zip(categories, documents):
-        if predict(document, model) == category:
+        (result, _) = predict(document, model)
+        if result == category:
             correct += 1
 
     return correct / len(categories)

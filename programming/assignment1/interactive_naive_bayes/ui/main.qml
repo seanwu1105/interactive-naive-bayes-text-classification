@@ -37,7 +37,7 @@ ApplicationWindow {
             Layout.margins: 8
 
             Text {
-                text: "Model Accuracy: 75%"
+                text: `Model Accuracy: ${Number.parseFloat(bridge.state.accuracy * 100).toFixed(2)}%`
             }
 
             ChartView {
@@ -70,7 +70,7 @@ ApplicationWindow {
                 text: (bridge.state.loadingLabel.length > 0
                        ? bridge.state.loadingLabel
                        : bridge.state.predictionResult.length > 0
-                       ? `Prediction Result: ${bridge.state.predictionResult} (??%)`
+                       ? `Prediction Result: ${bridge.state.predictionResult} (${bridge.state.confidence}%)`
                        : "")
             }
 
