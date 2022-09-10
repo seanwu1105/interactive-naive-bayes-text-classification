@@ -2,6 +2,7 @@ import dataclasses
 
 import numpy as np
 import numpy.typing as npt
+import scipy.special
 
 Category = np.int_
 Count = np.uint
@@ -45,16 +46,29 @@ def _get_likelihood(
     return np.vstack(category_likelihoods)
 
 
+# Use log-sum-exp trick to avoid underflow. See:
+# https://stats.stackexchange.com/questions/105602/example-of-how-the-log-sum-exp-trick-works-in-naive-bayes/253319#253319
 def predict(document: npt.NDArray[Count], model: Model) -> tuple[Category, float]:
-    posteriors = np.fromiter(
-        (
-            np.log(prior) + np.sum(np.log(model.likelihood[category]) * document)
-            for category, prior in enumerate(model.prior)
-        ),
-        dtype=np.float64,
+    log_normalizer = _get_log_normalizer(document, model)
+    probabilities = []
+    for category, prior in enumerate(model.prior):
+        log_posterior = np.log(prior) + np.sum(
+            np.log(model.likelihood[category]) * document
+        )
+
+        log_probability = log_posterior - log_normalizer
+        probabilities.append(np.exp(log_probability))
+
+    return np.argmax(probabilities), float(max(probabilities))
+
+
+def _get_log_normalizer(document: npt.NDArray[Count], model: Model):
+    return scipy.special.logsumexp(
+        np.fromiter(
+            (
+                np.log(prior) + np.sum(np.log(model.likelihood[category]) * document)
+                for category, prior in enumerate(model.prior)
+            ),
+            dtype=np.float64,
+        )
     )
-
-    # TODO: Wrong confidence
-    confidence = np.max(posteriors) / np.sum(posteriors)
-
-    return np.argmax(posteriors), float(confidence)

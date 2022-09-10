@@ -70,7 +70,7 @@ ApplicationWindow {
                 text: (bridge.state.loadingLabel.length > 0
                        ? bridge.state.loadingLabel
                        : bridge.state.predictionResult.length > 0
-                       ? `Prediction Result: ${bridge.state.predictionResult} (${bridge.state.confidence}%)`
+                       ? `Prediction Result: ${bridge.state.predictionResult} (${Number.parseFloat(bridge.state.confidence * 100).toFixed(2)}%)`
                        : "")
             }
 
