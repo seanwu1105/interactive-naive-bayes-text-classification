@@ -1,11 +1,14 @@
 # pylint: disable=invalid-name
+import json
 import threading
 from typing import TypedDict
 
+import numpy as np
+import numpy.typing as npt
 from PySide6.QtCore import Property, QObject, Signal, Slot
 from PySide6.QtQml import QmlElement
 
-from interactive_naive_bayes.naive_bayes.classifier import Model, predict
+from interactive_naive_bayes.naive_bayes.classifier import Category, Model, predict
 from interactive_naive_bayes.naive_bayes.preprocessing import (
     ProcessedData,
     preprocess,
@@ -17,11 +20,17 @@ QML_IMPORT_NAME = "InteractiveNaiveBayes.Ui"
 QML_IMPORT_MAJOR_VERSION = 1
 
 
+class WordImportance(TypedDict):
+    word: str
+    importance: float
+
+
 class State(TypedDict):
     accuracy: float
     loadingLabel: str
     predictionResult: str
     confidence: float
+    wordImportance: tuple[WordImportance, ...]
 
 
 @QmlElement
@@ -37,12 +46,13 @@ class Bridge(QObject):
             "loadingLabel": "Initializing",
             "predictionResult": "",
             "confidence": 0.0,
+            "wordImportance": (),
         }
         threading.Thread(target=self.train).start()
 
-    @Property("QVariantMap", notify=stateChanged)
+    @Property(str, notify=stateChanged)
     def state(self):
-        return self._state
+        return json.dumps(self._state)
 
     def set_state(self, state: State):
         self._state = state
@@ -50,20 +60,23 @@ class Bridge(QObject):
 
     @Slot(str)
     def predict(self, value):
-        def _predict(model: Model):
-            if self.processed is None:
-                return
-            category, confidence = predict(
-                to_document(value, self.processed.vocabulary_indices), model
-            )
-            result = self.processed.category_labels[category]
-            self.set_state(
-                {**self._state, "predictionResult": result, "confidence": confidence}
-            )
-
         assert self.model is not None
+        assert self.processed is not None
 
-        return _predict(self.model)
+        document = to_document(value, self.processed.vocabulary_indices)
+        category, confidence = predict(document, self.model)
+        result = self.processed.category_labels[category]
+        word_importance = get_word_importance(
+            document, category, self.model.likelihood, self.processed.vocabulary
+        )
+        self.set_state(
+            {
+                **self._state,
+                "predictionResult": result,
+                "confidence": confidence,
+                "wordImportance": word_importance,
+            }
+        )
 
     def train(self):
         if self.processed is None:
@@ -75,3 +88,21 @@ class Bridge(QObject):
             10, self.processed.categories, self.processed.documents
         )
         self.set_state({**self._state, "accuracy": accuracy, "loadingLabel": ""})
+
+
+def get_word_importance(
+    document: npt.NDArray,
+    category: Category,
+    likelihood: npt.NDArray[np.floating],
+    vocabulary: tuple[str, ...],
+    top=10,
+) -> tuple[WordImportance, ...]:
+    return tuple(
+        reversed(
+            tuple(
+                {"word": vocabulary[idx], "importance": likelihood[category][idx]}
+                for idx in np.argsort(likelihood[category] * (document != 0))[-top:]
+                if document[idx] != 0
+            )
+        )
+    )

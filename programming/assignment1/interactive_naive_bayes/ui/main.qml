@@ -6,23 +6,26 @@ import QtCharts
 import InteractiveNaiveBayes.Ui
 
 ApplicationWindow {
+    id: app
+
     Bridge {
         id: bridge
     }
+    
+    property var state: JSON.parse(bridge.state)
 
     visible: true
     width: 1080
-    height: 480
+    height: 720
     title: "Interactive Naive Bayes Text Classifier"
 
-    GridLayout {
+    ColumnLayout {
         anchors.fill: parent
-        columns: 2
 
         ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.preferredWidth: parent.width / 2
+            Layout.preferredHeight: parent.height / 4
             background: Rectangle {
                 color: "ghostwhite"
             }
@@ -32,12 +35,22 @@ ApplicationWindow {
                 placeholderText: "Text Document"
             }
         }
+
+        Button {
+            Layout.fillWidth: true
+            text: "Predict"
+            enabled: app.state.loadingLabel.length === 0
+            onClicked: {
+                bridge.predict(textArea.text)
+            }
+        }
         
         ColumnLayout {
             Layout.margins: 8
+            Layout.preferredHeight: parent.height / 2
 
             Text {
-                text: `Model Accuracy: ${Number.parseFloat(bridge.state.accuracy * 100).toFixed(2)}%`
+                text: `Model Accuracy: ${Number.parseFloat(app.state.accuracy * 100).toFixed(2)}%`
             }
 
             ChartView {
@@ -48,35 +61,43 @@ ApplicationWindow {
                 antialiasing: true
 
                 BarSeries {
-                    BarSet { values: [2, 2, 3, 4, 5, 6] }
+                    axisX: BarCategoryAxis {
+                        categories: app.state.wordImportance.map(i => i.word)
+                        labelsAngle: 45
+                    }
+                    axisY: ValueAxis {
+                        max: app.state.wordImportance.length === 0 ? 1 : Math.max(...app.state.wordImportance.map(i => i.importance))
+                        min: 0
+                    }
+                    BarSet { values: app.state.wordImportance.map(i => i.importance) }
                 }
             }
         }
+    }
 
-        Button {
-            Layout.fillWidth: true
-            text: "Predict"
-            enabled: bridge.state.loadingLabel.length === 0
-            onClicked: {
-                bridge.predict(textArea.text)
-            }
+    footer: Frame {
+        background: Rectangle {
+            color: "whitesmoke"
         }
+        contentWidth: parent.width
+        contentHeight: 40
+        topPadding: 0
+        bottomPadding: 0
 
         RowLayout {
-            Layout.preferredWidth: parent.width / 2
-
+            anchors.fill: parent
             Text {
                 Layout.fillWidth: true
-                text: (bridge.state.loadingLabel.length > 0
-                       ? bridge.state.loadingLabel
-                       : bridge.state.predictionResult.length > 0
-                       ? `Prediction Result: ${bridge.state.predictionResult} (${Number.parseFloat(bridge.state.confidence * 100).toFixed(2)}%)`
-                       : "")
+                text: (app.state.loadingLabel.length > 0
+                    ? app.state.loadingLabel
+                    : app.state.predictionResult.length > 0
+                    ? `Prediction Result: ${app.state.predictionResult} (${Number.parseFloat(app.state.confidence * 100).toFixed(2)}%)`
+                    : "")
             }
 
             BusyIndicator {
-                Layout.preferredHeight: 40 // Same as button height
-                visible: bridge.state.loadingLabel.length > 0
+                Layout.preferredHeight: 40
+                visible: app.state.loadingLabel.length > 0
                 running: true
             }
         }
