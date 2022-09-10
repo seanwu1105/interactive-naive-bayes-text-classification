@@ -45,17 +45,16 @@ def _get_likelihood(
     return np.vstack(category_likelihoods)
 
 
-def predict(document: npt.NDArray[Count], model: Model) -> tuple[Category, np.floating]:
+def predict(document: npt.NDArray[Count], model: Model) -> tuple[Category, float]:
     posteriors = np.fromiter(
         (
-            prior * np.prod(model.likelihood[category] ** document)
+            np.log(prior) + np.sum(np.log(model.likelihood[category]) * document)
             for category, prior in enumerate(model.prior)
         ),
         dtype=np.float64,
     )
 
-    confidence = np.max(posteriors) / np.sum(
-        posteriors
-    )  # TODO: Use logsumexp to avoid underflow
+    # TODO: Wrong confidence
+    confidence = np.max(posteriors) / np.sum(posteriors)
 
-    return np.argmax(posteriors), confidence
+    return np.argmax(posteriors), float(confidence)

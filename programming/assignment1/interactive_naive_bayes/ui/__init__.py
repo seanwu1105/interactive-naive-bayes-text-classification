@@ -57,8 +57,9 @@ class Bridge(QObject):
                 to_document(value, self.processed.vocabulary_indices), model
             )
             result = self.processed.category_labels[category]
-            self.set_state({**self._state, "predictionResult": result})
-            self.set_state({**self._state, "confidence": confidence})
+            self.set_state(
+                {**self._state, "predictionResult": result, "confidence": confidence}
+            )
 
         assert self.model is not None
 

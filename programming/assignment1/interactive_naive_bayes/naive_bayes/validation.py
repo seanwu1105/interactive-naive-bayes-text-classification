@@ -37,6 +37,7 @@ def validate(
         accuracies[accuracy] = model
         print(f"Fold took {time.time() - st:.2f} seconds")
 
+    print(f"Accuracies: {accuracies.keys()}")
     best_accuracy = max(accuracies.keys())
 
     return accuracies[best_accuracy], best_accuracy

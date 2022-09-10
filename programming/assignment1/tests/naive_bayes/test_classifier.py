@@ -40,4 +40,5 @@ def test_predict():
         likelihood=np.array([[0.5, 0.25, 0.25], [0.25, 0.5, 0.25]]),
     )
 
-    assert predict(document, model) == 1
+    (category, _) = predict(document, model)
+    assert category == 1
