@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls
 import QtQuick.Layouts
 import QtCharts
 import InteractiveNaiveBayes.Ui
@@ -33,6 +32,9 @@ ApplicationWindow {
             TextArea {
                 id: textArea
                 placeholderText: "Text Document"
+                selectByMouse: true
+                text: app.state.text
+                onTextChanged: bridge.setText(textArea.text)
             }
         }
 
@@ -40,9 +42,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             text: "Predict"
             enabled: app.state.loadingLabel.length === 0
-            onClicked: {
-                bridge.predict(textArea.text)
-            }
+            onClicked: bridge.predict()
         }
         
         ColumnLayout {
@@ -83,7 +83,7 @@ ApplicationWindow {
                 MouseArea {
                     id: mouseArea
                     anchors.fill: parent
-                    enabled: app.state.wordImportance.length > 0
+                    enabled: app.state.loadingLabel.length === 0 && app.state.wordImportance.length > 0
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     onClicked: (event) => {
                         if (event.button !== Qt.RightButton) return
@@ -128,10 +128,7 @@ ApplicationWindow {
                         id: contextMenu
                         MenuItem {
                             text: "Add Word"
-                            onClicked: {
-                                const word = app.state.wordImportance[chartView.rightClickedBarIndex].word
-                                bridge.addWord(word)
-                            }
+                            onClicked: addWordDialog.open()
                         }
                         MenuItem {
                             text: "Remove Word"
@@ -139,6 +136,22 @@ ApplicationWindow {
                                 const word = app.state.wordImportance[chartView.rightClickedBarIndex].word
                                 bridge.removeWord(word)
                             }
+                        }
+                    }
+
+                    Dialog {
+                        id: addWordDialog
+                        title: "Add Word"
+                        x: (parent.width - width) / 2
+                        y: (parent.height - height) / 2
+                        standardButtons: Dialog.Ok
+                        TextField {
+                            id: wordTextField
+                            placeholderText: "New word"
+                        }
+                        onAccepted: {
+                            bridge.addWord(wordTextField.text)
+                            wordTextField.text = ""
                         }
                     }
 

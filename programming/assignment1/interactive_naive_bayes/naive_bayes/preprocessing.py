@@ -26,7 +26,9 @@ def _get_default_data_path():
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), "dbpedia_8K.csv")
 
 
-def preprocess(filename=_get_default_data_path()) -> ProcessedData:
+def preprocess(
+    filename=_get_default_data_path(), word_mask: tuple[str, ...] | None = None
+) -> ProcessedData:
     df = pd.read_csv(filename)
 
     assert df["label"].unique().size == len(_TARGET_LABELS)
@@ -35,11 +37,13 @@ def preprocess(filename=_get_default_data_path()) -> ProcessedData:
         df["content"]
         .map(_remove_punctuation)
         .map(lambda s: s.lower().split())
+        .map(lambda words: (word for word in words if word not in _get_stopwords()))
         .map(
-            lambda words: collections.Counter(
-                filter(lambda w: w not in _get_stopwords(), words)
+            lambda words: (
+                word for word in words if word_mask is None or word not in word_mask
             )
         )
+        .map(collections.Counter)
     )
 
     vocabulary: tuple[str, ...] = tuple(

@@ -3,12 +3,14 @@ import json
 import threading
 from typing import TypedDict
 
-import numpy as np
-import numpy.typing as npt
 from PySide6.QtCore import Property, QObject, Signal, Slot
 from PySide6.QtQml import QmlElement
 
-from interactive_naive_bayes.naive_bayes.classifier import Category, Model, predict
+from interactive_naive_bayes.naive_bayes.classifier import Model, predict
+from interactive_naive_bayes.naive_bayes.importance import (
+    WordImportance,
+    get_word_importance,
+)
 from interactive_naive_bayes.naive_bayes.preprocessing import (
     ProcessedData,
     preprocess,
@@ -20,12 +22,8 @@ QML_IMPORT_NAME = "InteractiveNaiveBayes.Ui"
 QML_IMPORT_MAJOR_VERSION = 1
 
 
-class WordImportance(TypedDict):
-    word: str
-    importance: float
-
-
 class State(TypedDict):
+    text: str
     accuracy: float
     loadingLabel: str
     predictionResult: str
@@ -39,9 +37,11 @@ class Bridge(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.processed: ProcessedData | None = None
-        self.model: Model | None = None
+        self._word_mask: tuple[str, ...] = ()
+        self._processed: ProcessedData | None = None
+        self._model: Model | None = None
         self._state: State = {
+            "text": "",
             "accuracy": 0.0,
             "loadingLabel": "Initializing",
             "predictionResult": "",
@@ -49,19 +49,6 @@ class Bridge(QObject):
             "wordImportance": (),
         }
         threading.Thread(target=self._train).start()
-
-    def _train(self):
-        if self.processed is None:
-            self._set_state({**self._state, "loadingLabel": "Preprocessing"})
-            self.processed = preprocess()
-
-        self._set_state({**self._state, "loadingLabel": "Training"})
-        self.model, accuracy = validate(
-            10,
-            self.processed.categories,
-            self.processed.documents,
-        )
-        self._set_state({**self._state, "accuracy": accuracy, "loadingLabel": ""})
 
     @Property(str, notify=stateChanged)
     def state(self):
@@ -72,15 +59,21 @@ class Bridge(QObject):
         self.stateChanged.emit()
 
     @Slot(str)
-    def predict(self, value):
-        assert self.model is not None
-        assert self.processed is not None
+    def setText(self, value: str):
+        if self._state["text"] == value:
+            return
+        self._set_state({**self._state, "text": value})
 
-        document = to_document(value, self.processed.vocabulary_indices)
-        category, confidence = predict(document, self.model)
-        result = self.processed.category_labels[category]
+    @Slot()
+    def predict(self):
+        assert self._model is not None
+        assert self._processed is not None
+
+        document = to_document(self._state["text"], self._processed.vocabulary_indices)
+        category, confidence = predict(document, self._model)
+        result = self._processed.category_labels[category]
         word_importance = get_word_importance(
-            document, category, self.model.likelihood, self.processed.vocabulary
+            document, category, self._model.likelihood, self._processed.vocabulary
         )
         self._set_state(
             {
@@ -92,31 +85,35 @@ class Bridge(QObject):
         )
 
     @Slot(str)
-    def addWord(self, value):
-        print(value)
+    def addWord(self, value: str):
+        def task():
+            self._train()
+            self.predict()
+
+        self._word_mask = tuple(word for word in self._word_mask if word != value)
+        threading.Thread(target=task).start()
 
     @Slot(str)
-    def removeWord(self, value):
-        print(value)
+    def removeWord(self, value: str):
+        def task():
+            self._train()
+            self.predict()
+
+        self._word_mask += (value,)
+        threading.Thread(target=task).start()
 
     @Slot(str, float)
-    def setWordImportance(self, value, importance):
+    def setWordImportance(self, value: str, importance: float):
         print(value, importance)
 
+    def _train(self):
+        self._set_state({**self._state, "loadingLabel": "Preprocessing"})
+        self._processed = preprocess(word_mask=self._word_mask)
 
-def get_word_importance(
-    document: npt.NDArray,
-    category: Category,
-    likelihood: npt.NDArray[np.floating],
-    vocabulary: tuple[str, ...],
-    top=10,
-) -> tuple[WordImportance, ...]:
-    return tuple(
-        reversed(
-            tuple(
-                {"word": vocabulary[idx], "importance": likelihood[category][idx]}
-                for idx in np.argsort(likelihood[category] * (document != 0))[-top:]
-                if document[idx] != 0
-            )
+        self._set_state({**self._state, "loadingLabel": "Training"})
+        self._model, accuracy = validate(
+            10,
+            self._processed.categories,
+            self._processed.documents,
         )
-    )
+        self._set_state({**self._state, "accuracy": accuracy, "loadingLabel": ""})
