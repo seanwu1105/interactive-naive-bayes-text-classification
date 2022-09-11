@@ -1,4 +1,5 @@
 import time
+from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
@@ -13,7 +14,10 @@ from interactive_naive_bayes.naive_bayes.classifier import (
 
 
 def validate(
-    folds: int, categories: npt.NDArray[Category], documents: npt.NDArray[Count]
+    folds: int,
+    categories: npt.NDArray[Category],
+    documents: npt.NDArray[Count],
+    on_progress: Callable[[float], None] = lambda: None,
 ):
     assert len(documents) == len(categories)
 
@@ -23,7 +27,7 @@ def validate(
 
     accuracies: dict[float, Model] = {}
 
-    for group in groups:
+    for idx, group in enumerate(groups):
         st = time.time()
         test_categories = categories[group]
         test_documents = documents[group]
@@ -35,6 +39,8 @@ def validate(
         accuracy = _test(test_categories, test_documents, model)
 
         accuracies[accuracy] = model
+
+        on_progress((idx + 1) / len(groups))
         print(f"Fold took {time.time() - st:.2f} seconds")
 
     best_accuracy = max(accuracies.keys())

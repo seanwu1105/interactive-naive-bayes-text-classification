@@ -171,25 +171,30 @@ ApplicationWindow {
             color: "whitesmoke"
         }
         contentWidth: parent.width
-        contentHeight: 40
-        topPadding: 0
-        bottomPadding: 0
+        padding: 0
 
-        RowLayout {
+        ColumnLayout {
             anchors.fill: parent
-            Text {
+
+            ProgressBar {
                 Layout.fillWidth: true
-                text: (app.state.loadingLabel.length > 0
-                    ? app.state.loadingLabel
-                    : app.state.predictionResult.length > 0
-                    ? `Prediction Result: ${app.state.predictionResult} (${Number.parseFloat(app.state.confidence * 100).toFixed(2)}%)`
-                    : "")
+                value: app.state.progress
             }
 
-            BusyIndicator {
-                Layout.preferredHeight: 40
-                visible: app.state.loadingLabel.length > 0
-                running: true
+            RowLayout {
+                Text {
+                    Layout.fillWidth: true
+                    text: (app.state.loadingLabel.length > 0
+                        ? app.state.loadingLabel
+                        : app.state.predictionResult.length > 0
+                        ? `Prediction Result: ${app.state.predictionResult} (${Number.parseFloat(app.state.confidence * 100).toFixed(2)}%)`
+                        : "")
+                }
+
+                BusyIndicator {
+                    Layout.preferredHeight: 40
+                    running: app.state.loadingLabel.length > 0
+                }
             }
         }
     }

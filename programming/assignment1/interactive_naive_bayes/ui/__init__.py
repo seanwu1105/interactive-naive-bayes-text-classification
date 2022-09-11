@@ -29,6 +29,7 @@ class State(TypedDict):
     predictionResult: str
     confidence: float
     wordImportance: tuple[WordImportance, ...]
+    progress: float
 
 
 @QmlElement
@@ -47,6 +48,7 @@ class Bridge(QObject):
             "predictionResult": "",
             "confidence": 0.0,
             "wordImportance": (),
+            "progress": 0.0,
         }
         threading.Thread(target=self._train).start()
 
@@ -107,7 +109,9 @@ class Bridge(QObject):
         print(value, importance)
 
     def _train(self):
-        self._set_state({**self._state, "loadingLabel": "Preprocessing"})
+        self._set_state(
+            {**self._state, "loadingLabel": "Preprocessing", "progress": 0.0}
+        )
         self._processed = preprocess(word_mask=self._word_mask)
 
         self._set_state({**self._state, "loadingLabel": "Training"})
@@ -115,5 +119,8 @@ class Bridge(QObject):
             10,
             self._processed.categories,
             self._processed.documents,
+            on_progress=lambda progress: self._set_state(
+                {**self._state, "progress": progress}
+            ),
         )
         self._set_state({**self._state, "accuracy": accuracy, "loadingLabel": ""})
