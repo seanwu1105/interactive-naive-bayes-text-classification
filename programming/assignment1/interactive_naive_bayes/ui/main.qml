@@ -61,6 +61,8 @@ ApplicationWindow {
                 legend.visible: false
                 antialiasing: true
                 property real maxImportance: app.state.wordImportance.length === 0 ? 1 : Math.max(...app.state.wordImportance.map(i => i.importance))
+                property real draggingMaxImportance: 0
+                property real seriesYMax: Math.max(chartView.maxImportance, chartView.draggingMaxImportance) * 1.1
                 property var draggedBarIndex: undefined
                 property var rightClickedBarIndex: undefined
 
@@ -75,7 +77,7 @@ ApplicationWindow {
                         labelsAngle: 45
                     }
                     axisY: ValueAxis {
-                        max: chartView.maxImportance
+                        max: chartView.seriesYMax
                         min: 0
                     }
                 }
@@ -110,6 +112,7 @@ ApplicationWindow {
                         if (!isInChartArea(point)) return
 
                         barSet.replace(chartView.draggedBarIndex, point.y)
+                        chartView.draggingMaxImportance = Math.max(...barSet.values)
                     }
                     onReleased: (event) => {
                         if (event.button !== Qt.LeftButton) return
@@ -159,7 +162,7 @@ ApplicationWindow {
                         return point.x >= -0.5
                             && point.x <= app.state.wordImportance.length - 0.5
                             && point.y >= 0
-                            && point.y <= chartView.maxImportance
+                            && point.y <= chartView.seriesYMax
                     }
                 }
             }
