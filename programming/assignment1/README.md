@@ -10,3 +10,4 @@ See [instruction](instructions.pdf) for details.
 - [ ] Setup git hooks
 - [ ] Setup CI
 - [x] Setup tests
+- [ ] Split "real" test data (train, validation, test)
