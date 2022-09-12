@@ -20,6 +20,7 @@ class ProcessedData:
     documents: npt.NDArray[Count]  # TODO: Use a sparse matrix
     vocabulary: tuple[str, ...]
     vocabulary_indices: dict[str, int]
+    smoothing: npt.NDArray[Count]
 
 
 def _get_default_data_path():
@@ -64,6 +65,7 @@ def preprocess(
         documents=documents,
         vocabulary=vocabulary,
         vocabulary_indices=vocabulary_indices,
+        smoothing=np.ones((len(_TARGET_LABELS), len(vocabulary)), dtype=Count),
     )
 
 

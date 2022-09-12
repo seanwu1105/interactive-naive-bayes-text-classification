@@ -60,9 +60,10 @@ ApplicationWindow {
                 title: "Word Importance"
                 legend.visible: false
                 antialiasing: true
-                property real maxImportance: app.state.wordImportance.length === 0 ? 1 : Math.max(...app.state.wordImportance.map(i => i.importance))
+                property bool isReady: app.state.loadingLabel.length === 0 && app.state.wordImportance.length > 0
+                property real maxImportance: chartView.isReady ? Math.max(...app.state.wordImportance.map(i => i.importance)) : 1
                 property real draggingMaxImportance: 0
-                property real seriesYMax: Math.max(chartView.maxImportance, chartView.draggingMaxImportance) * 1.1
+                property real seriesYMax: Math.min(Math.max(chartView.maxImportance, chartView.draggingMaxImportance) * 1.1, 1)
                 property var draggedBarIndex: undefined
                 property var rightClickedBarIndex: undefined
 
@@ -72,6 +73,7 @@ ApplicationWindow {
                         values: app.state.wordImportance.map(i => i.importance)
                     }
 
+                    visible: chartView.isReady
                     axisX: BarCategoryAxis {
                         categories: app.state.wordImportance.map(i => i.word)
                         labelsAngle: 45
@@ -85,7 +87,7 @@ ApplicationWindow {
                 MouseArea {
                     id: mouseArea
                     anchors.fill: parent
-                    enabled: app.state.loadingLabel.length === 0 && app.state.wordImportance.length > 0
+                    enabled: chartView.isReady
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     onClicked: (event) => {
                         if (event.button !== Qt.RightButton) return
@@ -121,6 +123,7 @@ ApplicationWindow {
                         const word = app.state.wordImportance[chartView.draggedBarIndex].word
 
                         chartView.draggedBarIndex = undefined
+                        chartView.draggingMaxImportance = 0
 
                         const point = chartView.mapToValue(Qt.point(event.x, event.y))
 
@@ -185,6 +188,9 @@ ApplicationWindow {
             }
 
             RowLayout {
+                Layout.leftMargin: 8
+                Layout.rightMargin: 8
+
                 Text {
                     Layout.fillWidth: true
                     text: (app.state.loadingLabel.length > 0

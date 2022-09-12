@@ -1,6 +1,6 @@
 import numpy as np
 
-from interactive_naive_bayes.naive_bayes.classifier import Model, predict, train
+from interactive_naive_bayes.naive_bayes.classifier import Count, Model, predict, train
 
 
 def test_train():
@@ -20,7 +20,7 @@ def test_train():
         ]
     )
 
-    model = train(categories, documents)
+    model = train(categories, documents, smoothing=np.ones((3, 3), dtype=Count))
 
     np.testing.assert_allclose(
         model.prior,

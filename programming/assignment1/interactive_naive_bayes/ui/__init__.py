@@ -1,14 +1,17 @@
 # pylint: disable=invalid-name
+import dataclasses
 import json
 import threading
 from typing import TypedDict
 
+import numpy as np
 from PySide6.QtCore import Property, QObject, Signal, Slot
 from PySide6.QtQml import QmlElement
 
 from interactive_naive_bayes.naive_bayes.classifier import Model, predict
 from interactive_naive_bayes.naive_bayes.importance import (
     WordImportance,
+    adjust_category_smoothing,
     get_word_importance,
 )
 from interactive_naive_bayes.naive_bayes.preprocessing import (
@@ -88,37 +91,58 @@ class Bridge(QObject):
 
     @Slot(str)
     def addWord(self, value: str):
-        def task():
-            self._train()
-            self.predict()
-
         self._word_mask = tuple(word for word in self._word_mask if word != value)
-        threading.Thread(target=task).start()
+        threading.Thread(target=self._retrain).start()
 
     @Slot(str)
     def removeWord(self, value: str):
-        def task():
-            self._train()
-            self.predict()
-
         self._word_mask += (value,)
-        threading.Thread(target=task).start()
+        threading.Thread(target=self._retrain).start()
 
     @Slot(str, float)
     def setWordImportance(self, value: str, importance: float):
-        print(value, importance)
+        assert self._processed is not None
+
+        category = self._processed.category_labels.index(
+            self._state["predictionResult"]
+        )
+
+        word_idx = self._processed.vocabulary_indices[value]
+
+        document_indices = np.nonzero(self._processed.categories == category)
+        documents = self._processed.documents[document_indices]
+
+        new_category_smoothing = adjust_category_smoothing(
+            old_smoothing=self._processed.smoothing[category],
+            target_likelihood=importance,
+            word_idx=word_idx,
+            documents=documents,
+        )
+        new_smoothing = np.copy(self._processed.smoothing)
+        new_smoothing[category] = new_category_smoothing
+
+        self._processed = dataclasses.replace(self._processed, smoothing=new_smoothing)
+
+        threading.Thread(target=self._retrain).start()
+
+    def _retrain(self):
+        self._train()
+        self.predict()
 
     def _train(self):
         self._set_state(
             {**self._state, "loadingLabel": "Preprocessing", "progress": 0.0}
         )
-        self._processed = preprocess(word_mask=self._word_mask)
+
+        if self._processed is None:
+            self._processed = preprocess(word_mask=self._word_mask)
 
         self._set_state({**self._state, "loadingLabel": "Training"})
         self._model, accuracy = validate(
             10,
             self._processed.categories,
             self._processed.documents,
+            self._processed.smoothing,
             on_progress=lambda progress: self._set_state(
                 {**self._state, "progress": progress}
             ),

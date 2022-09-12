@@ -17,7 +17,8 @@ def validate(
     folds: int,
     categories: npt.NDArray[Category],
     documents: npt.NDArray[Count],
-    on_progress: Callable[[float], None] = lambda: None,
+    smoothing: npt.NDArray[Count],
+    on_progress: Callable[[float], None] = lambda _: None,
 ):
     assert len(documents) == len(categories)
 
@@ -35,13 +36,12 @@ def validate(
         train_categories = np.delete(categories, group)
         train_documents = np.delete(documents, group, axis=0)
 
-        model = train(train_categories, train_documents)
+        model = train(train_categories, train_documents, smoothing)
         accuracy = _test(test_categories, test_documents, model)
 
         accuracies[accuracy] = model
 
         on_progress((idx + 1) / len(groups))
-        print(f"Fold took {time.time() - st:.2f} seconds")
 
     best_accuracy = max(accuracies.keys())
 

@@ -17,9 +17,15 @@ class Model:
     likelihood: npt.NDArray[np.floating]
 
 
-def train(categories: npt.NDArray[Category], documents: npt.NDArray[Count]) -> Model:
+def train(
+    categories: npt.NDArray[Category],
+    documents: npt.NDArray[Count],
+    smoothing: npt.NDArray[Count],
+) -> Model:
     assert len(categories) == len(documents)
-    return Model(_get_prior(categories), _get_likelihood(categories, documents))
+    return Model(
+        _get_prior(categories), _get_likelihood(categories, documents, smoothing)
+    )
 
 
 def _get_prior(categories: npt.NDArray[Category]) -> npt.NDArray[np.floating]:
@@ -30,18 +36,24 @@ def _get_prior(categories: npt.NDArray[Category]) -> npt.NDArray[np.floating]:
 
 
 def _get_likelihood(
-    categories: npt.NDArray[Category], documents: npt.NDArray[Count]
+    categories: npt.NDArray[Category],
+    documents: npt.NDArray[Count],
+    smoothing: npt.NDArray[Count],
 ) -> npt.NDArray[np.floating]:
     assert len(categories) == len(documents)
 
     unique = np.unique(categories)
 
+    if smoothing is None:
+        smoothing = np.ones((len(unique), documents.shape[1]), dtype=np.float64)
+
     category_likelihoods = []
     for category in unique:
         indices = np.nonzero(categories == category)
-        word_counts = documents[indices].sum(axis=0)
-        all_counts = word_counts.sum()
-        words_likelihoods = (word_counts + 1) / (all_counts + len(word_counts))
+        word_counts = np.sum(documents[indices], axis=0)
+        words_likelihoods = (word_counts + smoothing[category]) / (
+            np.sum(word_counts) + np.sum(smoothing[category])
+        )
         category_likelihoods.append(words_likelihoods)
 
     return np.vstack(category_likelihoods)
