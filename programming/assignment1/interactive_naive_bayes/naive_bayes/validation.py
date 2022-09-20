@@ -1,4 +1,3 @@
-import time
 from typing import Callable
 
 import numpy as np
@@ -29,7 +28,6 @@ def validate(
     accuracies: dict[float, Model] = {}
 
     for idx, group in enumerate(groups):
-        st = time.time()
         test_categories = categories[group]
         test_documents = documents[group]
 
