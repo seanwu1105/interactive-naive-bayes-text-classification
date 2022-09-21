@@ -50,6 +50,6 @@ jobs:
 
       - name: Lint
         run: |
-          poetry run python -m pylint scripts
+          poetry run python -m pylint **/*.py --errors-only
           poetry run python -m black **/*.py --check
           poetry run python -m mypy **/*.py
