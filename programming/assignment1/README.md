@@ -7,7 +7,7 @@ See [instruction](instructions.pdf) for details.
 - [x] Build NBC
 - [x] Build UI
   - [ ] Remove generated files (rc)
-- [ ] Setup git hooks
+- [x] Setup git hooks
 - [x] Setup CI
 - [x] Setup tests
 - [ ] Split "real" test data (train, validation, test)

@@ -55,7 +55,8 @@ class Bridge(QObject):
         }
         threading.Thread(target=self._train).start()
 
-    @Property(str, notify=stateChanged)
+    # Ignore type error due to: https://bugreports.qt.io/browse/PYSIDE-1675
+    @Property(str, notify=stateChanged)  # type: ignore[operator, arg-type]
     def state(self):
         return json.dumps(self._state)
 
@@ -67,7 +68,8 @@ class Bridge(QObject):
     def setText(self, value: str):
         if self._state["text"] == value:
             return
-        self._set_state({**self._state, "text": value})
+        # Ignore type error due to https://github.com/python/mypy/issues/4122
+        self._set_state({**self._state, "text": value})  # type: ignore[misc]
 
     @Slot()
     def predict(self):

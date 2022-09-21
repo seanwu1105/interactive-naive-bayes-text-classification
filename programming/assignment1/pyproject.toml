@@ -20,6 +20,7 @@ mypy = "^0.971"
 black = "^22.8.0"
 pre-commit = "^2.20.0"
 commitizen = "^2.34.0"
+pandas-stubs = "^1.4.4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
