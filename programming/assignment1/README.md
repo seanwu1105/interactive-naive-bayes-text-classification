@@ -1,6 +1,18 @@
 # Programming Assignment 1: Interactive Naive Bayes Text Classification
 
-See [instruction](instructions.pdf) for specifications.
+## Previews
+
+### Training
+
+![train](assets/train.gif)
+
+### Prediction
+
+![predict](assets/predict.gif)
+
+### Interaction
+
+![interact](assets/interact.gif)
 
 ## Getting Started
 

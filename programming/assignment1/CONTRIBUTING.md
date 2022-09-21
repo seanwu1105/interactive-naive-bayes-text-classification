@@ -1,5 +1,7 @@
 # How to Contribute
 
+See [instruction](instructions.pdf) for specifications.
+
 ## Getting Started
 
 Install Python 3.10 or later.
