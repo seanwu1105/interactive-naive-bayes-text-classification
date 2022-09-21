@@ -19,7 +19,7 @@ from interactive_naive_bayes.naive_bayes.preprocessing import (
     preprocess,
     to_document,
 )
-from interactive_naive_bayes.naive_bayes.validation import validate
+from interactive_naive_bayes.naive_bayes.validation import test, validate
 
 QML_IMPORT_NAME = "InteractiveNaiveBayes.Ui"
 QML_IMPORT_MAJOR_VERSION = 1
@@ -138,15 +138,32 @@ class Bridge(QObject):
 
         if self._processed is None:
             self._processed = preprocess(word_mask=self._word_mask)
+        stacked = np.column_stack(
+            (self._processed.categories, self._processed.documents)
+        )
+        np.random.shuffle(stacked)
+
+        train_size = int(len(stacked) * 0.8)
+        train_categories, train_documents = (
+            stacked[:train_size, 0],
+            stacked[:train_size, 1:],
+        )
+        test_categories, test_documents = (
+            stacked[train_size:, 0],
+            stacked[train_size:, 1:],
+        )
 
         self._set_state({**self._state, "loadingLabel": "Training"})
-        self._model, accuracy = validate(
+        self._model, _ = validate(
             10,
-            self._processed.categories,
-            self._processed.documents,
+            train_categories,
+            train_documents,
             self._processed.smoothing,
             on_progress=lambda progress: self._set_state(
                 {**self._state, "progress": progress}
             ),
         )
+
+        accuracy = test(test_categories, test_documents, self._model)
+
         self._set_state({**self._state, "accuracy": accuracy, "loadingLabel": ""})

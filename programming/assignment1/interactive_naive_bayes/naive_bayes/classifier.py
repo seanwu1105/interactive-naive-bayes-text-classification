@@ -6,7 +6,7 @@ import numpy.typing as npt
 import scipy.special
 
 Category = np.int_
-Count = np.uint
+Count = np.int_
 
 
 @dataclasses.dataclass

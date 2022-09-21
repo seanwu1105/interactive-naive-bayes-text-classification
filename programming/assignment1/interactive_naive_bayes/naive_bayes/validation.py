@@ -28,14 +28,14 @@ def validate(
     accuracies: dict[float, Model] = {}
 
     for idx, group in enumerate(groups):
-        test_categories = categories[group]
-        test_documents = documents[group]
+        validation_categories = categories[group]
+        validation_documents = documents[group]
 
         train_categories = np.delete(categories, group)
         train_documents = np.delete(documents, group, axis=0)
 
         model = train(train_categories, train_documents, smoothing)
-        accuracy = _test(test_categories, test_documents, model)
+        accuracy = test(validation_categories, validation_documents, model)
 
         accuracies[accuracy] = model
 
@@ -46,7 +46,7 @@ def validate(
     return accuracies[best_accuracy], best_accuracy
 
 
-def _test(
+def test(
     categories: npt.NDArray[Category], documents: npt.NDArray[Count], model
 ) -> float:
     correct = 0
