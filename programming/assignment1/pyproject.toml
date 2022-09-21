@@ -9,7 +9,7 @@ python = "~3.10"
 numpy = "^1.23.2"
 pandas = "^1.4.4"
 nltk = "^3.7"
-PySide6 = "^6.3.1"
+PySide6 = "6.3.1"
 scipy = "^1.9.1"
 numba = "^0.56.2"
 
