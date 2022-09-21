@@ -94,11 +94,13 @@ class Bridge(QObject):
     @Slot(str)
     def addWord(self, value: str):
         self._word_mask = tuple(word for word in self._word_mask if word != value)
+        self._processed = None
         threading.Thread(target=self._retrain).start()
 
     @Slot(str)
     def removeWord(self, value: str):
         self._word_mask += (value,)
+        self._processed = None
         threading.Thread(target=self._retrain).start()
 
     @Slot(str, float)
