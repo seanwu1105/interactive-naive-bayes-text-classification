@@ -28,7 +28,9 @@ def _get_default_data_path():
 
 
 def preprocess(
-    filename=_get_default_data_path(), word_mask: tuple[str, ...] | None = None
+    filename=_get_default_data_path(),
+    word_mask: tuple[str, ...] | None = None,
+    old_data: ProcessedData | None = None,
 ) -> ProcessedData:
     df = pd.read_csv(filename)
 
@@ -59,13 +61,22 @@ def preprocess(
         for word, count in counter.items():
             documents[i, vocabulary_indices[word]] = count
 
+    smoothing = np.ones((len(_TARGET_LABELS), len(vocabulary)), dtype=Count)
+    if old_data is not None:
+        for category in range(len(_TARGET_LABELS)):
+            for word in vocabulary:
+                old_word_smoothing = old_data.smoothing[category][
+                    old_data.vocabulary_indices[word]
+                ]
+                smoothing[category][vocabulary_indices[word]] = old_word_smoothing
+
     return ProcessedData(
         categories=df["label"].to_numpy(dtype=Category),
         category_labels=_TARGET_LABELS,
         documents=documents,
         vocabulary=vocabulary,
         vocabulary_indices=vocabulary_indices,
-        smoothing=np.ones((len(_TARGET_LABELS), len(vocabulary)), dtype=Count),
+        smoothing=smoothing,
     )
 
 

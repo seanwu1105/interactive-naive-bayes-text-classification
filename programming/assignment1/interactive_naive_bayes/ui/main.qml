@@ -14,8 +14,8 @@ ApplicationWindow {
     property var state: JSON.parse(bridge.state)
 
     visible: true
-    width: 1080
-    height: 720
+    width: 720
+    height: 480
     title: "Interactive Naive Bayes Text Classifier"
 
     ColumnLayout {

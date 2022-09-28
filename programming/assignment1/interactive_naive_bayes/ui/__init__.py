@@ -94,13 +94,11 @@ class Bridge(QObject):
     @Slot(str)
     def addWord(self, value: str):
         self._word_mask = tuple(word for word in self._word_mask if word != value)
-        self._processed = None
         threading.Thread(target=self._retrain).start()
 
     @Slot(str)
     def removeWord(self, value: str):
         self._word_mask += (value,)
-        self._processed = None
         threading.Thread(target=self._retrain).start()
 
     @Slot(str, float)
@@ -138,8 +136,9 @@ class Bridge(QObject):
             {**self._state, "loadingLabel": "Preprocessing", "progress": 0.0}
         )
 
-        if self._processed is None:
-            self._processed = preprocess(word_mask=self._word_mask)
+        self._processed = preprocess(
+            word_mask=self._word_mask, old_data=self._processed
+        )
         stacked = np.column_stack(
             (self._processed.categories, self._processed.documents)
         )
