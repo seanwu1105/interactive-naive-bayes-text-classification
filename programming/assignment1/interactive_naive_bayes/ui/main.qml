@@ -63,7 +63,7 @@ ApplicationWindow {
                 property bool isReady: app.state.loadingLabel.length === 0 && app.state.wordImportance.length > 0
                 property real maxImportance: chartView.isReady ? Math.max(...app.state.wordImportance.map(i => i.importance)) : 1
                 property real draggingMaxImportance: 0
-                property real seriesYMax: Math.min(Math.max(chartView.maxImportance, chartView.draggingMaxImportance) * 1.1, 1)
+                property real seriesYMax: Math.min(Math.max(chartView.maxImportance, chartView.draggingMaxImportance) * 1.1, 0.99)
                 property var draggedBarIndex: undefined
                 property var rightClickedBarIndex: undefined
 
