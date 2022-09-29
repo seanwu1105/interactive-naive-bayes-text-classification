@@ -37,6 +37,9 @@ def adjust_category_smoothing(
     # documents shape: (document_in_category_count, unique_word_count)
     documents: npt.NDArray[Count],
 ) -> npt.NDArray[Count]:
+    if target_likelihood >= 1:
+        raise ValueError("target_likelihood must be less than 1")
+
     # The likelihood of the word in an arbitrary category is defined as:
     #              word_count[word] + smoothing[word]
     # P(word) = ----------------------------------------
