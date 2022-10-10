@@ -29,12 +29,16 @@ def _get_default_data_path():
 
 def preprocess(
     filename=_get_default_data_path(),
-    word_mask: tuple[str, ...] | None = None,
+    removed_words: set[str] | None = None,
+    added_words: set[str] | None = None,
     old_data: ProcessedData | None = None,
 ) -> ProcessedData:
     df = pd.read_csv(filename)
 
     assert df["label"].unique().size == len(_TARGET_LABELS)
+
+    if removed_words is not None and added_words is not None:
+        assert len(removed_words.intersection(added_words)) == 0
 
     df["content"] = (
         df["content"]
@@ -43,14 +47,18 @@ def preprocess(
         .map(lambda words: (word for word in words if word not in _get_stopwords()))
         .map(
             lambda words: (
-                word for word in words if word_mask is None or word not in word_mask
+                word
+                for word in words
+                if removed_words is None or word not in removed_words
             )
         )
         .map(collections.Counter)
     )
 
     vocabulary: tuple[str, ...] = tuple(
-        set(key for counters in df["content"].values for key in counters.keys())
+        set(key for counters in df["content"].values for key in counters.keys()).union(
+            added_words if added_words is not None else ()
+        )
     )
 
     vocabulary_indices = {word: i for i, word in enumerate(vocabulary)}
@@ -65,9 +73,10 @@ def preprocess(
     if old_data is not None:
         for category in range(len(_TARGET_LABELS)):
             for word in vocabulary:
-                old_word_smoothing = old_data.smoothing[category][
-                    old_data.vocabulary_indices[word]
-                ]
+                if word in old_data.vocabulary_indices:
+                    old_word_smoothing = old_data.smoothing[category][
+                        old_data.vocabulary_indices[word]
+                    ]
                 smoothing[category][vocabulary_indices[word]] = old_word_smoothing
 
     return ProcessedData(

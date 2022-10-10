@@ -12,8 +12,8 @@ def test_preprocess():
     assert len(processed.vocabulary) == 3
 
 
-def test_preprocess_with_mask():
-    processed = preprocess(get_test_data_path(), word_mask=("banana",))
+def test_preprocess_with_removed_words():
+    processed = preprocess(get_test_data_path(), removed_words={"banana"})
 
     assert np.array_equal(processed.categories, np.array([0, 1, 2, 3, 4, 5, 6, 7, 7]))
     assert len(processed.vocabulary) == 2

@@ -41,7 +41,8 @@ class Bridge(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._word_mask: tuple[str, ...] = ()
+        self._removed_words: set[str] = set()
+        self._added_words: set[str] = set()
         self._processed: ProcessedData | None = None
         self._model: Model | None = None
         self._state: State = {
@@ -80,7 +81,12 @@ class Bridge(QObject):
         category, confidence = predict(document, self._model)
         result = self._processed.category_labels[category]
         word_importance = get_word_importance(
-            document, category, self._model.likelihood, self._processed.vocabulary
+            document,
+            category,
+            self._model.likelihood,
+            self._processed.vocabulary,
+            self._processed.vocabulary_indices,
+            self._added_words,
         )
         self._set_state(
             {
@@ -93,12 +99,16 @@ class Bridge(QObject):
 
     @Slot(str)
     def addWord(self, value: str):
-        self._word_mask = tuple(word for word in self._word_mask if word != value)
+        if value in self._removed_words:
+            self._removed_words.remove(value)
+        self._added_words.add(value)
         threading.Thread(target=self._retrain).start()
 
     @Slot(str)
     def removeWord(self, value: str):
-        self._word_mask += (value,)
+        if value in self._added_words:
+            self._added_words.remove(value)
+        self._removed_words.add(value)
         threading.Thread(target=self._retrain).start()
 
     @Slot(str, float)
@@ -137,7 +147,9 @@ class Bridge(QObject):
         )
 
         self._processed = preprocess(
-            word_mask=self._word_mask, old_data=self._processed
+            removed_words=self._removed_words,
+            added_words=self._added_words,
+            old_data=self._processed,
         )
         stacked = np.column_stack(
             (self._processed.categories, self._processed.documents)

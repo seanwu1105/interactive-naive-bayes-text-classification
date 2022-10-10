@@ -16,17 +16,34 @@ def get_word_importance(
     category: Category,
     likelihood: npt.NDArray[np.floating],
     vocabulary: tuple[str, ...],
+    vocabulary_indices: dict[str, int],
+    added_words: set[str],
     top=10,
 ) -> tuple[WordImportance, ...]:
-    return tuple(
-        reversed(
-            tuple(
-                {"word": vocabulary[idx], "importance": likelihood[category][idx]}
-                for idx in np.argsort(likelihood[category] * (document != 0))[-top:]
-                if document[idx] != 0
-            )
-        )
+    top_category_word_importance: tuple[WordImportance, ...] = tuple(
+        {
+            "word": vocabulary[idx],
+            "importance": likelihood[category][idx],
+        }
+        for idx in np.argsort(likelihood[category] * (document != 0))[-top:]
+        if document[idx] != 0
     )
+
+    added_word_importance: tuple[WordImportance, ...] = tuple(
+        {
+            "word": word,
+            "importance": likelihood[category][vocabulary_indices[word]],
+        }
+        for word in added_words
+    )
+
+    return tuple(
+        sorted(
+            top_category_word_importance + added_word_importance,
+            key=lambda x: x["importance"],
+            reverse=True,
+        )
+    )[-top:]
 
 
 def adjust_category_smoothing(
