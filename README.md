@@ -1,4 +1,6 @@
-# Programming Assignment 1: Interactive Naive Bayes Text Classification
+# Interactive Naive Bayes Text Classification
+
+CS593HAI Human-AI Interaction programming assignment 1 @Purdue.
 
 ## Previews
 
@@ -18,7 +20,8 @@
 
 Install Python 3.10.x.
 
-Install Poetry **1.2 or later**. See [Poetry's documentation](https://python-poetry.org/docs/) for details.
+Install Poetry **1.2 or later**. See
+[Poetry's documentation](https://python-poetry.org/docs/) for details.
 
 > Poetry earlier than 1.2 will not work with this project.
 
@@ -40,7 +43,8 @@ Start the application:
 python main.py
 ```
 
-> Make sure you are in the project's root directory and your have activated the virtual environment.
+> Make sure you are in the project's root directory and your have activated the
+> virtual environment.
 
 ## Contributing
 
