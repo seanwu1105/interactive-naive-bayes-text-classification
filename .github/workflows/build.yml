@@ -2,7 +2,7 @@ name: build
 on: [push, pull_request]
 
 jobs:
-  programming-1-test:
+  test:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
@@ -25,7 +25,7 @@ jobs:
       - name: Test
         run: poetry run python -m pytest
 
-  programming-1-lint:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
